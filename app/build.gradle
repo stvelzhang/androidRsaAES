@@ -1,0 +1,54 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+    buildToolsVersion "30.0.1"
+    defaultConfig {
+        applicationId "com.revo.fuckdemo"
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk{
+            moduleName "JniUtil"
+            ldLibs "log"//实现__android_log_print
+            abiFilters "armeabi","armeabi-v7a","arm64-v8a" //输出指定的三种abi体系下的so库"armeabi",只加载armabi架构（目录下）的so库，如果是别的架构，就会找不到
+
+        }
+        sourceSets{  //不配的话都会有一个默认值  可以指定哪些源文件（或文件夹下的源文件）要被编译，哪些源文件要被排除
+            main{
+                jni.srcDirs = []  //禁用as自动生成mk
+                //jniLibs.srcDirs=["src/main/libs" ] //so包就去src/main/libs目录下找
+                //jniLibs.srcDirs=['libs']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    task ndkBuild(type:Exec,description:'Compile JNI source via NDK'){
+        commandLine "D:\\SDK\\sdk\\ndk\\android-ndk-r14b\\ndk-build.cmd",//配置ndk的路径
+                'NDK_PROJECT_PATH=build/intermediates/ndk',//ndk默认的生成so的文件
+                'NDK_LIBS_OUT=src/main/libs',//配置的我们想要生成的so文件所在的位置
+                'APP_BUILD_SCRIPT=src/main/jni/Android.mk',//指定项目以这个mk的方式
+                'NDK_APPLOCATION_MK=src/main/jni/Application.mk'//指定项目以这个mk的方式
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path file('src/main/jni/Android.mk')
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+}
